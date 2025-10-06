@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Wordle Helper — jaehong.kim</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    *,*::before,*::after{box-sizing:border-box}
+    :root{
+      --bg:#0f1115;--fg:#e6ebf2;--sub:#aab3c2;--muted:#667085;
+      --card:#161a22;--accent:#7aa2f7;--good:#22c55e;--bad:#ef4444;
+      --warn:#f59e0b;--btn:#222938;--btnHover:#2b3550;
+      --border:#212836;--input:#0b0e14;
+    }
+    body.light{
+      --bg:#f8fafc;--fg:#0f172a;--sub:#334155;--muted:#64748b;
+      --card:#ffffff;--accent:#3b82f6;--good:#16a34a;--bad:#dc2626;
+      --warn:#d97706;--btn:#e2e8f0;--btnHover:#cbd5e1;
+      --border:#dbe1ea;--input:#f1f5f9;
+    }
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--fg);font:14px/1.5 system-ui,Segoe UI,Inter,Roboto,Arial}
+    .wrap{max-width:1000px;margin:0 auto;padding:20px}
+    h1{font-size:20px;margin:0 0 12px 0}
+    .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;min-width:0}
+    .btn{background:var(--btn);border:1px solid var(--border);color:var(--fg);border-radius:10px;padding:8px 12px;cursor:pointer}
+    .btn:disabled{opacity:.6;cursor:not-allowed}
+    .btn:hover{background:var(--btnHover)}
+    input[type="file"]{display:none}
+    .filelabel{display:inline-block}
+    .tag{color:var(--sub);font-size:12px}
+    .bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .search{flex:1;min-width:220px;max-width:520px}
+    .search input{width:100%;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:var(--input);color:var(--fg)}
+    .grid{display:grid;grid-template-columns:repeat(13,minmax(28px,1fr));gap:6px}
+    .k{display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--border);background:var(--input);height:34px;cursor:pointer;user-select:none}
+    .k.inc{background:rgba(34,197,94,.18);border-color:#1f9b56}
+    .k.exc{background:rgba(239,68,68,.20);border-color:#a12828}
+    .tabs{display:flex;gap:8px;flex-wrap:wrap}
+    .tab{padding:6px 10px;border-radius:10px;border:1px solid var(--border);background:var(--input);color:var(--fg);cursor:pointer}
+    .tab.active{outline:2px solid var(--accent)}
+    .pill{padding:3px 8px;border:1px solid var(--border);border-radius:999px;background:var(--input);color:var(--sub)}
+    .list{max-height:60vh;overflow:auto;border:1px solid var(--border);border-radius:12px}
+    .list ul{list-style:none;margin:0;padding:0}
+    .list li{padding:10px 12px;border-bottom:1px solid var(--border);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+    .list li:last-child{border-bottom:none}
+    small{color:var(--muted)}
+    .hint{color:var(--sub)}
+
+    @media(max-width:1024px){#gInc,#gExc,#pInc,#pExc{grid-template-columns:repeat(12,minmax(28px,1fr))}}
+    @media(max-width:960px){#gInc,#gExc,#pInc,#pExc{grid-template-columns:repeat(11,minmax(28px,1fr))}}
+    @media(max-width:900px){#gInc,#gExc,#pInc,#pExc{grid-template-columns:repeat(10,minmax(28px,1fr))}}
+    @media(max-width:840px){#gInc,#gExc,#pInc,#pExc{grid-template-columns:repeat(9,minmax(28px,1fr))}}
+    @media(max-width:720px){
+      .search{flex-basis:100%;max-width:100%}
+      #gInc,#gExc,#pInc,#pExc{grid-template-columns:repeat(9,minmax(26px,1fr));gap:5px}
+      #gInc .k,#gExc .k,#pInc .k,#pExc .k{height:32px}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Wordle Helper <span class="tag">wordle.jaehong.kim</span></h1>
+
+    <div class="card" style="margin-bottom:12px">
+      <div class="bar">
+        <label class="filelabel">
+          <input id="fileInput" type="file" accept=".csv,.txt" />
+          <button class="btn" id="chooseFileBtn">Upload custom list (CSV)</button>
+        </label>
+        <button class="btn" id="use2315">Use 2135 Words (Default)</button>
+        <button class="btn" id="use3200">Use 3200 Words</button>
+        <button class="btn" id="use14855">Use 14855 Words</button>
+        <button class="btn" id="modeToggle" title="Toggle Dark/Light">🌙 Dark</button>
+        <span class="pill"><strong id="count">0</strong> candidates</span>
+      </div>
+      <div class="bar" style="margin-top:10px">
+        <div class="search"><input id="searchBox" placeholder="Search (substring, case-insensitive)..." /></div>
+        <button class="btn" id="clearAll">Clear filters</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="card" style="flex:1;min-width:320px">
+        <div style="margin-bottom:8px"><strong>Global include</strong></div>
+        <div class="grid" id="gInc"></div>
+      </div>
+      <div class="card" style="flex:1;min-width:320px">
+        <div style="margin-bottom:8px"><strong>Global exclude</strong></div>
+        <div class="grid" id="gExc"></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <div class="tabs" id="tabs"></div>
+      <div class="row" style="margin-top:10px">
+        <div class="card" style="flex:1;min-width:280px">
+          <div style="margin-bottom:8px"><strong>Position include</strong></div>
+          <div class="grid" id="pInc"></div>
+        </div>
+        <div class="card" style="flex:1;min-width:280px">
+          <div style="margin-bottom:8px"><strong>Position exclude</strong></div>
+          <div class="grid" id="pExc"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card list" style="margin-top:12px"><ul id="words"></ul></div>
+
+    <div style="margin-top:10px">
+      <small>
+        Letter: Global include · Alt+Letter: Global exclude · Shift+Letter: Position include · Ctrl+Letter: Position exclude · 1–5: switch tab · /: search · `: theme
+      </small>
+    </div>
+  </div>
+
+  <script>
+    const byId=id=>document.getElementById(id);
+    const ALPHA=Array.from({length:26},(_,i)=>String.fromCharCode(65+i)); // A–Z
+    const state={all:[],filtered:[],search:'',globalInclude:new Set(),globalExclude:new Set(),pos:Array.from({length:5},()=>({include:new Set(),exclude:new Set()})),activePos:0};
+
+    (function(){
+      const s=localStorage.getItem('wf-theme');
+      if(s==='light')document.body.classList.add('light');
+      updateThemeBtn();
+      byId('modeToggle').onclick=toggleTheme;
+    })();
+
+    function toggleTheme(){
+      document.body.classList.toggle('light');
+      localStorage.setItem('wf-theme',document.body.classList.contains('light')?'light':'dark');
+      updateThemeBtn();
+    }
+    function updateThemeBtn(){const isLight=document.body.classList.contains('light');byId('modeToggle').textContent=isLight?'☀️ Light':'🌙 Dark';}
+
+    function parseWordsFromCsvText(t){
+      const lines=t.split(/\r?\n/);const words=[];const seen=new Set();
+      for(const raw of lines){const line=raw.trim();if(!line)continue;
+        const cells=line.split(/,|\s+/);
+        for(let c of cells){c=(c||'').trim().toLowerCase();
+          if(/^[a-z]{5}$/.test(c)&&!seen.has(c)){seen.add(c);words.push(c);}
+        }}
+      return words;
+    }
+
+    async function loadCsvFile(name){
+      try{
+        const btns=document.querySelectorAll('.btn');btns.forEach(b=>b.disabled=true);
+        const res=await fetch(`./${name}`,{cache:'no-store'});
+        if(!res.ok)throw new Error('fetch failed');
+        const txt=await res.text();
+        const words=parseWordsFromCsvText(txt);
+        if(!words.length)throw new Error('empty');
+        loadWordsFromArray(words);
+      }catch(e){alert('Error loading '+name+': '+e.message);}
+      finally{document.querySelectorAll('.btn').forEach(b=>b.disabled=false);}
+    }
+
+    function buildKeyboard(container,kind){
+      container.innerHTML='';
+      for(const ch of ALPHA){
+        const d=document.createElement('div');
+        d.className='k';
+        d.textContent=ch;
+        d.dataset.ch=ch.toLowerCase();
+        d.onclick=()=>{
+          if(kind==='gInc')toggle(state.globalInclude,state.globalExclude,ch.toLowerCase());
+          else if(kind==='gExc')toggle(state.globalExclude,state.globalInclude,ch.toLowerCase());
+          else if(kind==='pInc')toggle(state.pos[state.activePos].include,state.pos[state.activePos].exclude,ch.toLowerCase());
+          else toggle(state.pos[state.activePos].exclude,state.pos[state.activePos].include,ch.toLowerCase());
+          refresh();apply();
+        };
+        container.appendChild(d);
+      }
+    }
+    function toggle(primary,secondary,ch){if(primary.has(ch))primary.delete(ch);else{primary.add(ch);secondary.delete(ch);}}
+    function refresh(){
+      const gI=byId('gInc').children,gE=byId('gExc').children,pI=byId('pInc').children,pE=byId('pExc').children;
+      for(const e of gI)e.classList.toggle('inc',state.globalInclude.has(e.dataset.ch));
+      for(const e of gE)e.classList.toggle('exc',state.globalExclude.has(e.dataset.ch));
+      for(const e of pI)e.classList.toggle('inc',state.pos[state.activePos].include.has(e.dataset.ch));
+      for(const e of pE)e.classList.toggle('exc',state.pos[state.activePos].exclude.has(e.dataset.ch));
+      for(const t of byId('tabs').children)t.classList.toggle('active',Number(t.dataset.idx)===state.activePos);
+    }
+    function renderTabs(){
+      const tabs=byId('tabs');
+      tabs.innerHTML='';
+      for(let i=0;i<5;i++){
+        const b=document.createElement('button');
+        b.className='tab'+(i===state.activePos?' active':'');
+        b.textContent='Pos '+(i+1);
+        b.dataset.idx=i;
+        b.onclick=()=>{state.activePos=i;refresh();};
+        tabs.appendChild(b);
+      }
+    }
+
+    function apply(){
+      const out=[];const gi=state.globalInclude,ge=state.globalExclude,s=(state.search||'').toLowerCase();
+      WORDS:for(const w of state.all){
+        if(s&&!w.includes(s))continue;
+        for(const ch of ge)if(w.includes(ch))continue WORDS;
+        for(const ch of gi)if(!w.includes(ch))continue WORDS;
+        for(let i=0;i<5;i++){
+          const need=state.pos[i].include,ban=state.pos[i].exclude,c=w[i];
+          if(need.size>0&&!need.has(c))continue WORDS;
+          if(ban.has(c))continue WORDS;
+        }
+        out.push(w);
+      }
+      state.filtered=out;renderList();
+    }
+
+    function renderList(){
+      const ul=byId('words');ul.innerHTML='';
+      for(const w of state.filtered){
+        const li=document.createElement('li');
+        li.textContent=w.toUpperCase();
+        ul.appendChild(li);
+      }
+      byId('count').textContent=state.filtered.length;
+    }
+
+    function loadWordsFromArray(a){
+      const seen=new Set();
+      state.all=a.filter(w=>/^[a-z]{5}$/.test(w)&&!seen.has(w)&&seen.add(w)).sort();
+      apply();
+    }
+
+    function wire(){
+      buildKeyboard(byId('gInc'),'gInc');buildKeyboard(byId('gExc'),'gExc');buildKeyboard(byId('pInc'),'pInc');buildKeyboard(byId('pExc'),'pExc');
+      renderTabs();refresh();
+      byId('searchBox').oninput=e=>{state.search=e.target.value;apply();};
+      byId('clearAll').onclick=()=>{state.globalInclude.clear();state.globalExclude.clear();for(let i=0;i<5;i++){state.pos[i].include.clear();state.pos[i].exclude.clear();}state.search='';byId('searchBox').value='';refresh();apply();};
+      const f=byId('fileInput');byId('chooseFileBtn').onclick=()=>f.click();
+      f.onchange=async()=>{const file=f.files?.[0];if(!file)return;try{const t=await file.text();const w=parseWordsFromCsvText(t);if(!w.length)throw new Error('empty');loadWordsFromArray(w);}catch(e){alert('Load failed: '+e.message);}f.value='';};
+      byId('use2315').onclick=()=>loadCsvFile('wordle_solutions_2315.csv');
+      byId('use3200').onclick=()=>loadCsvFile('wordle_solutions_3200.csv');
+      byId('use14855').onclick=()=>loadCsvFile('wordle_solutions_14855.csv');
+
+      window.onkeydown=e=>{
+        if(document.activeElement===byId('searchBox'))return;
+        const k=e.key,l=k.toLowerCase();
+        if(l>='1'&&l<='5'){state.activePos=Number(l)-1;refresh();return;}
+        if(k==='/'){e.preventDefault();byId('searchBox').focus();return;}
+        if(k==='`'){toggleTheme();return;} // use backtick for theme toggle
+        if(!/^[a-z]$/i.test(l))return;
+        if(e.ctrlKey||e.metaKey)toggle(state.pos[state.activePos].exclude,state.pos[state.activePos].include,l);
+        else if(e.altKey)toggle(state.globalExclude,state.globalInclude,l);
+        else if(e.shiftKey)toggle(state.pos[state.activePos].include,state.pos[state.activePos].exclude,l);
+        else toggle(state.globalInclude,state.globalExclude,l);
+        refresh();apply();
+      };
+    }
+
+    (async function(){wire();await loadCsvFile('wordle_solutions_2315.csv');})();
+  </script>
+</body>
+</html>
