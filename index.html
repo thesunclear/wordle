@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Wordle Helper — jaehong.kim</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Favicons & PWA -->
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16x16.png" />
+  <link rel="manifest" href="./site.webmanifest" />
+  <meta name="theme-color" content="#0f1115" />
+
+  <style>
+    /* Basic styles */
+    *,*::before,*::after{box-sizing:border-box}
+    :root{
+      --bg:#0f1115;--fg:#e6ebf2;--sub:#aab3c2;--muted:#667085;
+      --card:#161a22;--accent:#7aa2f7;--good:#22c55e;--bad:#ef4444;
+      --warn:#f59e0b;--btn:#222938;--btnHover:#2b3550;
+      --border:#212836;--input:#0b0e14;
+      --overlay: rgba(10,12,16,.35); --bg-bright:.75; --bg-blur:1px;
+    }
+    body.light{
+      --bg:#f8fafc;--fg:#0f172a;--sub:#334155;--muted:#64748b;
+      --card:#ffffff;--accent:#3b82f6;--good:#16a34a;--bad:#dc2626;
+      --warn:#d97706;--btn:#e2e8f0;--btnHover:#cbd5e1;
+      --border:#dbe1ea;--input:#f1f5f9;
+    }
+
+    html,body{height:100%}
+    html,body{margin:0;padding:0;background:transparent;color:var(--fg);font:14px/1.5 system-ui,Segoe UI,Inter,Roboto,Arial}
+    body.light{ background: var(--bg); }
+    body.light::before, body.light::after{ content:none !important; }
+    body::before{
+      content:""; position:fixed; inset:0;
+      background:url('./background.jpg') center/512px repeat;
+      filter: brightness(var(--bg-bright)) saturate(.95) blur(var(--bg-blur));
+      z-index:-2; will-change:transform;
+    }
+    body::after{ content:""; position:fixed; inset:0; background:var(--overlay); z-index:-1; }
+
+    .wrap{max-width:1000px;margin:0 auto;padding:20px}
+    h1{font-size:20px;margin:0}
+    .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;min-width:0;box-shadow:0 6px 18px rgba(0,0,0,.15)}
+    .btn{background:var(--btn);border:1px solid var(--border);color:var(--fg);border-radius:10px;padding:8px 12px;cursor:pointer}
+    .btn[disabled]{opacity:.6;cursor:not-allowed}
+    .btn:hover{background:var(--btnHover)}
+    input[type="file"]{display:none}
+    .filelabel{display:inline-block}
+    .tag{color:var(--sub);font-size:12px;margin-left:6px}
+    .bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .search{flex:1;min-width:220px;max-width:700px}
+    .search input{width:100%;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:var(--input);color:var(--fg)}
+
+    /* Key grids */
+    .grid{display:grid;grid-template-columns:repeat(13,minmax(28px,1fr));gap:6px}
+    .k{display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--border);background:var(--input);height:34px;cursor:pointer;user-select:none}
+    .k.inc{background:rgba(34,197,94,.18);border-color:#1f9b56}
+    .k.exc{background:rgba(239,68,68,.20);border-color:#a12828}
+
+    /* Tabs */
+    .tabs{display:grid;grid-template-columns:repeat(5, 1fr);gap:8px}
+    .tab{padding:6px 10px;text-align:center;border-radius:10px;border:1px solid var(--border);background:var(--input);color:var(--fg);cursor:pointer;white-space:nowrap;min-width:0}
+    .tab.active{outline:2px solid var(--accent)}
+
+    /* List */
+    .list{max-height:60vh;overflow:auto;border:1px solid var(--border);border-radius:12px}
+    .list ul{list-style:none;margin:0;padding:0}
+    .list li{padding:10px 12px;border-bottom:1px solid var(--border);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+    .list li:last-child{border-bottom:none}
+    small{color:var(--muted)} .hint{color:var(--sub)}
+    .counter{font-size:18px;font-weight:700;margin:14px 2px 6px 2px;color:var(--fg)}
+    .counter small{font-weight:500;color:var(--sub)}
+    .header-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+    .header-row .btn{padding:6px 10px}
+
+    /* Help */
+    .help{margin-top:18px;color:var(--sub);font-size:13px;line-height:1.45}
+    .help ul{margin:6px 0 0 18px;padding:0}
+    .help li{margin-bottom:4px}
+    .help code{background:var(--input);border-radius:5px;padding:1px 4px;font-family:ui-monospace,monospace}
+
+    /* Suggestion table */
+    table{width:100%;border-collapse:collapse}
+    thead th{font-weight:600;text-align:left;border-bottom:1px solid var(--border);padding:8px}
+    tbody td{padding:8px;border-bottom:1px solid var(--border);font-family:ui-monospace,monospace}
+    .mono{font-family:ui-monospace,monospace}
+
+    /* Recommender controls */
+    .ctl{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .ctl label{font-size:13px;color:var(--sub);display:flex;gap:6px;align-items:center}
+    .ctl input[type="number"]{width:86px;padding:6px;border-radius:8px;border:1px solid var(--border);background:var(--input);color:var(--fg)}
+    .ctl select{padding:6px;border-radius:8px;border:1px solid var(--border);background:var(--input);color:var(--fg)}
+    .progress{height:6px;background:var(--input);border:1px solid var(--border);border-radius:999px;overflow:hidden}
+    .barin{height:100%;background:var(--accent);width:0%}
+
+    /* Responsive */
+    @media(max-width:1024px){#gInc,#gExc,#pInc,#pExc{grid-template-columns:repeat(12,minmax(28px,1fr))}}
+    @media(max-width:960px){#gInc,#gExc,#pInc,#pExc{grid-template-columns:repeat(11,minmax(28px,1fr))}}
+    @media(max-width:900px){#gInc,#gExc,#pInc,#pExc{grid-template-columns:repeat(10,minmax(28px,1fr))}}
+    @media(max-width:840px){#gInc,#gExc,#pInc,#pExc{grid-template-columns:repeat(9,minmax(28px,1fr))}}
+    @media(max-width:720px){
+      body::before{filter:brightness(var(--bg-bright)) saturate(.95) blur(.8px)}
+      .search{flex-basis:100%;max-width:100%}
+      #gInc,#gExc,#pInc,#pExc{grid-template-columns:repeat(9,minmax(26px,1fr));gap:5px}
+      #gInc .k,#gExc .k,#pInc .k,#pExc .k{height:32px}
+      .counter{font-size:16px;margin:12px 2px 6px}
+      .tabs{gap:6px}.tab{padding:5px 8px;font-size:13px}
+    }
+    @media(max-width:480px){.tab .label{display:none}.tab{padding:5px 6px;font-size:13px}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <!-- Header -->
+    <div class="header-row">
+      <h1>Wordle Helper <span class="tag">wordle.jaehong.kim</span></h1>
+      <button class="btn" id="modeToggle" title="Toggle Dark/Light">🌙 Dark</button>
+    </div>
+    
+<!-- First part is now done, I'll continue with the second part -->
+    <!-- Top controls -->
+    <div class="card" style="margin-bottom:12px">
+      <div class="bar">
+        <label class="filelabel">
+          <input id="fileInput" type="file" accept=".csv,.txt" />
+          <button class="btn" id="chooseFileBtn">Upload Custom List (CSV)</button>
+        </label>
+        <button class="btn" id="use2315">Use 2315 Words (Default)</button>
+        <button class="btn" id="use3200">Use 3200 Words</button>
+        <button class="btn" id="use14855">Use 14855 Words</button>
+      </div>
+      <div class="bar" style="margin-top:10px">
+        <div class="search">
+          <input id="searchBox" placeholder="Search (use ?, *, [AEIOU], &, |, ( ) — see help below)" />
+        </div>
+        <button class="btn" id="clearAll">Clear Filters</button>
+      </div>
+    </div>
+
+    <!-- Global include/exclude -->
+    <div class="row">
+      <div class="card" style="flex:1;min-width:320px">
+        <div style="margin-bottom:8px"><strong>Global Include</strong></div>
+        <div class="grid" id="gInc"></div>
+      </div>
+      <div class="card" style="flex:1;min-width:320px">
+        <div style="margin-bottom:8px"><strong>Global Exclude</strong></div>
+        <div class="grid" id="gExc"></div>
+      </div>
+    </div>
+
+    <!-- Position include/exclude -->
+    <div class="card" style="margin-top:12px">
+      <div class="tabs" id="tabs"></div>
+      <div class="row" style="margin-top:10px">
+        <div class="card" style="flex:1;min-width:280px">
+          <div style="margin-bottom:8px"><strong>Position Include</strong></div>
+          <div class="grid" id="pInc"></div>
+        </div>
+        <div class="card" style="flex:1;min-width:280px">
+          <div style="margin-bottom:8px"><strong>Position Exclude</strong></div>
+          <div class="grid" id="pExc"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Counter -->
+    <div class="counter"><span id="count">0</span> <small>candidates</small></div>
+
+    <!-- List -->
+    <div class="card list" style="margin-top:6px">
+      <ul id="words"></ul>
+    </div>
+
+    <!-- Recommender -->
+    <div class="card" style="margin-top:12px">
+      <div class="bar" style="justify-content:space-between">
+        <div><strong>Next-Guess Recommender</strong> <span class="tag">(Exact for small sets · Fast entropy for large sets)</span></div>
+        <div class="bar">
+          <button class="btn" id="suggestExact">Suggest (Exact E[steps])</button>
+          <button class="btn" id="suggestFast">Suggest (Fast)</button>
+          <button class="btn" id="resetSuggest" title="Clear results and progress">Reset</button>
+        </div>
+      </div>
+
+      <!-- Controls: row 1 -->
+      <div class="ctl" style="margin-top:10px">
+        <label title="Enforce feedback consistency (Wordle Hard rules)">
+          Hard <input type="checkbox" id="hardMode" />
+        </label>
+        <label title="Guess pool used when Hard is OFF">
+          Pool
+          <select id="poolSelect">
+            <option value="current" selected>Current</option>
+            <option value="2315">2315</option>
+            <option value="3200">3200</option>
+            <option value="14855">14855</option>
+          </select>
+        </label>
+      </div>
+
+      <!-- Controls: row 2 -->
+      <div class="ctl" style="margin-top:6px">
+        <label title="Max |S| for Exact recursion; above this use Fast">
+          Exact Thr
+          <input type="number" id="exactThreshold" value="40" min="5" max="200" />
+        </label>
+        <label title="When using external guesses in Exact, add top-N (by entropy)">
+          Max Pool
+          <input type="number" id="exactMaxPool" value="60" min="0" max="400" />
+        </label>
+        <label title="Fast mode: limit of guesses evaluated (higher = slower, more precise)">
+          Fast Evals
+          <input type="number" id="fastMax" value="2315" min="50" max="20000" />
+        </label>
+        <button class="btn" id="stopBtn" disabled>Stop</button>
+      </div>
+
+      <!-- Progress + status -->
+      <div class="progress" style="margin-top:10px"><div id="pbar" class="barin"></div></div>
+      <div id="suggestStatus" class="hint" style="margin-top:8px"></div>
+
+      <!-- Table -->
+      <div style="overflow:auto;margin-top:8px">
+        <table>
+          <thead>
+            <tr>
+              <th>Word</th>
+              <th>E[steps]</th>
+              <th>Entropy</th>
+              <th>Expected |S'|</th>
+              <th>Max bucket</th>
+            </tr>
+          </thead>
+          <tbody id="suggestTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Keyboard hints -->
+    <div style="margin-top:10px">
+      <small>
+        Letter: Global Include · Alt+Letter: Global Exclude · Shift+Letter: Position Include · Ctrl+Letter: Position Exclude · 1–5: Switch Tab · /: Search · `: Theme
+      </small>
+    </div>
+
+    <!-- Search Help -->
+    <div class="help">
+      <strong>Search Help</strong>
+      <ul>
+        <li><b>?</b>: exactly one letter (e.g., <code>A?E</code> → <i>ACE, APE, ARE</i>)</li>
+        <li><b>*</b>: zero or more letters (e.g., <code>A*A</code> → <i>ARENA, ALPHA, AMAZE</i>)</li>
+        <li><b>[AEIOU]</b>: any one listed; <b>[^AEIOU]</b>: not these (e.g., <code>[^AEIOU]ATE</code> → <i>SLATE, CRATE</i>)</li>
+        <li><b>&</b>: AND; <b>|</b>: OR (AND has higher precedence)</li>
+        <li><b>( )</b>: group terms (e.g., <code>(ING & R) | (A?E & N)</code>)</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    /* ===== Utilities & State ===== */
+    const byId=id=>document.getElementById(id);
+    const ALPHA=Array.from({length:26},(_,i)=>String.fromCharCode(65+i));
+    const state={
+      all:[], filtered:[], search:'',
+      searchTester:null,
+      globalInclude:new Set(), globalExclude:new Set(),
+      pos:Array.from({length:5},()=>({include:new Set(),exclude:new Set()})),
+      activePos:0,
+      base2315:[], base3200:[], base14855:[],
+      cancel:false
+    };
+
+    /* ===== Theme ===== */
+    (function(){
+      const s=localStorage.getItem('wf-theme');
+      if(s==='light')document.body.classList.add('light');
+      updateThemeBtn(); byId('modeToggle').onclick=toggleTheme;
+    })();
+    function toggleTheme(){
+      document.body.classList.toggle('light');
+      localStorage.setItem('wf-theme',document.body.classList.contains('light')?'light':'dark');
+      updateThemeBtn();
+    }
+    function updateThemeBtn(){
+      byId('modeToggle').textContent=document.body.classList.contains('light')?'☀️ Light':'🌙 Dark';
+    }
+    /* ===== CSV parsing & loading ===== */
+    function parseWordsFromCsvText(t){
+      const lines=t.split(/\r?\n/);const words=[];const seen=new Set();
+      for(const raw of lines){
+        const line=raw.trim(); if(!line) continue;
+        const cells=line.split(/,|\s+/);
+        for(let c of cells){
+          c=(c||'').trim().toLowerCase();
+          if(/^[a-z]{5}$/.test(c)&&!seen.has(c)){ seen.add(c); words.push(c); }
+        }
+      }
+      return words;
+    }
+    async function fetchCsv(name){
+      const res=await fetch(`./${name}`,{cache:'no-store'});
+      if(!res.ok) throw new Error('fetch failed: '+name);
+      return parseWordsFromCsvText(await res.text());
+    }
+    async function loadCsvFile(name){
+      try{
+        lockUI(true);
+        const words=await fetchCsv(name);
+        loadWordsFromArray(words);
+      }catch(e){ alert('Error loading '+name+': '+e.message); }
+      finally{ lockUI(false); }
+    }
+  </script>
+</body>
+</html>
