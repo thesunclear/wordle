@@ -387,6 +387,15 @@ h1 .tag{
   text-align: center;
 }
 
+#filterModeToggle {
+  width: 130px;
+  min-width: 130px;
+  /* display: flex;               flex container */
+  align-items: center;         /* vertical center */
+  justify-content: center;     /* horizontal center */
+  text-align: center;
+}
+
 /* ========== Top Controls (word list / clear / mode toggle) ========== */
 .bar{
   display:flex;
@@ -1059,6 +1068,84 @@ body.light .pattern-scroll::-webkit-scrollbar-thumb {
   opacity: 0.75;
 }
 
+/* ========== Wordle Mode ========== */
+#wordleGuessInput{
+  width:150px;
+  padding:8px 10px;
+  border-radius:999px;
+  border:1px solid var(--border);
+  background:var(--bg-input);
+  color:var(--fg);
+  font-size:13px;
+}
+#wordleGuessInput::placeholder{ color:var(--sub); opacity:.8; }
+
+.wordle-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+  padding:10px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:var(--bg-card-soft);
+  margin-top:10px;
+}
+
+.wordle-tiles{
+  display:grid;
+  grid-template-columns:repeat(5,42px);
+  gap:6px;
+}
+
+.wordle-tile{
+  width:42px;
+  height:42px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:700;
+  font-family:"SF Mono","Roboto Mono",ui-monospace,Menlo,Monaco,monospace;
+  cursor:pointer;
+  user-select:none;
+}
+
+.wordle-tile.gray{
+  background:rgba(149,165,166,0.18);
+  border-color:#95a5a6;
+  color:#95a5a6;
+}
+.wordle-tile.yellow{
+  background:rgba(241,196,15,0.18);
+  border-color:#f1c40f;
+  color:#f1c40f;
+}
+.wordle-tile.green{
+  background:rgba(46,204,113,0.18);
+  border-color:#2ecc71;
+  color:#2ecc71;
+}
+
+.wordle-row-actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+.wordle-applied-badge{
+  font-size:12px;
+  color:var(--sub);
+  margin-left:2px;
+}
+
+/* Lock Wordle tiles while computing */
+#wordleRows.locked .wordle-tile{
+  pointer-events:none;
+  opacity:0.55;
+}
+
 /* ========== Responsive Tweaks ========== */
 @media(max-width:900px){
   #words{columns:3 110px}
@@ -1177,8 +1264,33 @@ body.light .pattern-scroll::-webkit-scrollbar-thumb {
 		</div>
 		<div class="top-controls-right">
 			<button class="btn" id="clearAll" style="margin-right:5px">Clear Filters</button>
-			<button id="filterModeToggle" class="btn">Advanced Mode</button>
+			<!-- <label for="modeSelect" style="font-size:13px;color:var(--sub);display:flex;align-items:center;gap:6px;">
+				Mode
+			</label> -->
+			<select id="modeSelect" aria-label="Select mode">
+				<option value="wordle" selected>Wordle Mode</option>
+				<!-- <option value="basic">Basic Mode</option> -->
+				<option value="adv">Advanced Mode</option>
+			</select>
 		</div>
+	</div>
+</div>
+
+<!-- Wordle Mode -->
+<div id="wordlePanel" style="display:none">
+	<div class="card" style="margin-top:12px">
+		<div class="bar" style="justify-content:space-between; gap:10px; flex-wrap:wrap;">
+			<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+				<strong>Wordle Mode</strong>
+				<span class="hint">Add guesses and tap tiles to set ⬛/🟨/🟩 feedback.</span>
+			</div>
+			<div class="bar" style="gap:8px; flex-wrap:wrap;">
+				<input id="wordleGuessInput" maxlength="5" placeholder="5-letter word" style="text-transform:uppercase;">
+				<button class="btn" id="wordleAddGuessBtn">Add Guess</button>
+			</div>
+		</div>
+		<div id="wordleRows" style="margin-top:12px"></div>
+		<div class="hint" id="wordleStatus" style="margin-top:8px"></div>
 	</div>
 </div>
 
@@ -1534,7 +1646,7 @@ body.light .pattern-scroll::-webkit-scrollbar-thumb {
 		<p>Each list serves a different purpose: 2,309 and 3,207 as answer references (smaller vs. broader), and 14,855 as a comprehensive guess vocabulary.</p>
 	</div>
 	<br>
-	<!-- Basic Mode Notes -->
+	<!-- Basic Mode Notes 
 	<strong id="basicModeHelpToggle" class="toggle-header">📌 Basic Mode Notes</strong>
 	<div id="basicModeHelpContent" class="toggle-content">
 		<ul>
@@ -1547,7 +1659,7 @@ body.light .pattern-scroll::-webkit-scrollbar-thumb {
 			</li>
 		</ul>
 	</div>
-	<br>
+	<br> -->
 	<!-- Metrics Glossary -->
 	<strong id="metricsGlossaryToggle" class="toggle-header">📘 Metrics Glossary</strong>
 	<div id="metricsGlossaryContent" class="toggle-content">
@@ -1826,6 +1938,385 @@ function initFilterModeToggle() {
 		setFilterMode(isAdvVisible ? 'basic' : 'adv');
 	});
 }
+
+/* =========================================================
+   Wordle Mode (Simulated feedback filtering)
+   - Independent from Basic/Advanced (reset on cross-switch)
+   - Repeated letters handled correctly
+   ========================================================= */
+
+let appMode = 'wordle'; // default
+
+const wordleState = {
+  rows: [] // { guess: "ABCDE", pattern:[0..2]*5, applied:boolean }
+};
+
+function setPanelVisibility(mode){
+  const wp = byId('wordlePanel');
+  const bp = byId('basicPanel');
+  const ap = byId('advPanel');
+
+  if (wp) wp.style.display = (mode === 'wordle') ? '' : 'none';
+  if (bp) bp.style.display = (mode === 'basic') ? '' : 'none';
+  if (ap) ap.style.display = (mode === 'adv') ? '' : 'none';
+}
+
+function resetWordleMode(){
+  wordleState.rows = [];
+  const rowsEl = byId('wordleRows');
+  if (rowsEl) rowsEl.innerHTML = '';
+  const inp = byId('wordleGuessInput');
+  if (inp) inp.value = '';
+  const st = byId('wordleStatus');
+  if (st) st.textContent = '';
+}
+
+function resetBasicAdvMode(){
+  // Click existing "Clear Filters" logic (whatever your current code does)
+  // We do NOT want to duplicate that logic here.
+  const btn = byId('clearAll');
+  if (btn) btn.click();
+}
+
+function setAppMode(nextMode, { skipReset = false } = {}){
+  if (!nextMode || nextMode === appMode) {
+    setPanelVisibility(appMode);
+    return;
+  }
+
+  const prev = appMode;
+  appMode = nextMode;
+
+  // Reset rules:
+  // - Wordle <-> (Basic/Adv): reset both sides
+  // - Basic <-> Adv: no reset
+  if (!skipReset){
+    const crossWordle = (prev === 'wordle') !== (nextMode === 'wordle');
+    if (crossWordle){
+      resetWordleMode();
+      // Reset Basic/Advanced filters too when entering or leaving Wordle mode
+      // (Your requirement)
+      // We trigger existing clear logic safely:
+      // - If entering wordle: clear basic/adv
+      // - If leaving wordle: clear wordle already done; also clear basic/adv to start fresh
+      resetBasicAdvMode();
+    }
+  }
+
+  setPanelVisibility(appMode);
+
+  // Re-apply appropriate filtering
+  if (appMode === 'wordle'){
+    applyWordleFiltersAndRender();
+  }
+}
+
+/* ---------- Wordle feedback simulation ---------- */
+/*
+pattern encoding: 0=gray, 1=yellow, 2=green
+Wordle rules:
+1) Mark greens first.
+2) For remaining letters, mark yellow only if that letter remains unused in answer.
+*/
+function computeWordlePattern(guessUpper, answerLower){
+  const g = guessUpper.toLowerCase().split('');
+  const a = answerLower.split('');
+
+  const pat = [0,0,0,0,0];
+  const used = [false,false,false,false,false];
+
+  // Greens
+  for (let i=0;i<5;i++){
+    if (g[i] === a[i]){
+      pat[i] = 2;
+      used[i] = true;
+    }
+  }
+
+  // Count remaining answer letters
+  const remain = Object.create(null);
+  for (let i=0;i<5;i++){
+    if (!used[i]){
+      const ch = a[i];
+      remain[ch] = (remain[ch] || 0) + 1;
+    }
+  }
+
+  // Yellows
+  for (let i=0;i<5;i++){
+    if (pat[i] === 2) continue;
+    const ch = g[i];
+    if (remain[ch] > 0){
+      pat[i] = 1;
+      remain[ch]--;
+    }
+  }
+
+  return pat;
+}
+
+function isValidGuessText(s){
+  return /^[A-Z]{5}$/.test(s);
+}
+
+function cycleTileValue(v){
+  // gray -> yellow -> green -> gray
+  return (v + 1) % 3;
+}
+
+function patternToClass(v){
+  if (v === 2) return 'green';
+  if (v === 1) return 'yellow';
+  return 'gray';
+}
+
+function renderWordleRows(){
+  const rowsEl = byId('wordleRows');
+  if (!rowsEl) return;
+
+  rowsEl.innerHTML = '';
+
+  wordleState.rows.forEach((row, idx) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'wordle-row';
+
+    const tiles = document.createElement('div');
+    tiles.className = 'wordle-tiles';
+
+    for (let i=0;i<5;i++){
+      const t = document.createElement('div');
+      t.className = `wordle-tile ${patternToClass(row.pattern[i])}`;
+      t.textContent = row.guess[i];
+
+      t.addEventListener('click', () => {
+        if (typeof uiLocked !== 'undefined' && uiLocked) return;
+
+        row.pattern[i] = cycleTileValue(row.pattern[i]);
+        // Update tile class quickly
+        t.className = `wordle-tile ${patternToClass(row.pattern[i])}`;
+
+        // If applied, re-filter immediately
+        if (row.applied){
+          applyWordleFiltersAndRender();
+        }
+      });
+
+      tiles.appendChild(t);
+    }
+
+    const actions = document.createElement('div');
+    actions.className = 'wordle-row-actions';
+
+    const applyBtn = document.createElement('button');
+    applyBtn.className = 'btn';
+    applyBtn.textContent = row.applied ? 'Applied' : 'Apply';
+
+    const badge = document.createElement('span');
+    badge.className = 'wordle-applied-badge';
+    badge.textContent = row.applied ? '✓' : '';
+
+    applyBtn.addEventListener('click', () => {
+      row.applied = !row.applied;
+      applyBtn.textContent = row.applied ? 'Applied' : 'Apply';
+      badge.textContent = row.applied ? '✓' : '';
+      applyWordleFiltersAndRender();
+    });
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn';
+    delBtn.textContent = 'Delete';
+    delBtn.addEventListener('click', () => {
+      wordleState.rows.splice(idx, 1);
+      renderWordleRows();
+      applyWordleFiltersAndRender();
+    });
+
+    actions.appendChild(applyBtn);
+    actions.appendChild(delBtn);
+    actions.appendChild(badge);
+
+    wrap.appendChild(tiles);
+    wrap.appendChild(actions);
+
+    rowsEl.appendChild(wrap);
+  });
+}
+
+/* ---------- Wordle filtering pipeline ---------- */
+function applyWordleFilters(){
+  // Base candidates are always state.all (built from top Word List selection)
+  let arr = state.all || [];
+
+  const appliedRows = wordleState.rows.filter(r => r.applied);
+
+  for (const r of appliedRows){
+    const guessU = r.guess; // upper
+    const targetPat = r.pattern;
+
+    arr = arr.filter(cand => {
+      const p = computeWordlePattern(guessU, cand); // cand is lower in your lists
+      for (let i=0;i<5;i++){
+        if (p[i] !== targetPat[i]) return false;
+      }
+      return true;
+    });
+  }
+
+  state.filtered = arr;
+}
+
+function renderCandidateListFromState(){
+  const countEl = byId('count');
+  const ul = byId('words');
+  if (!countEl || !ul) return;
+
+  const arr = state.filtered || [];
+  countEl.textContent = String(arr.length);
+
+  ul.innerHTML = '';
+  const frag = document.createDocumentFragment();
+  for (const w of arr){
+    const li = document.createElement('li');
+    li.textContent = w.toUpperCase();
+    frag.appendChild(li);
+  }
+  ul.appendChild(frag);
+}
+
+function applyWordleFiltersAndRender(){
+  applyWordleFilters();
+  renderCandidateListFromState();
+
+  const st = byId('wordleStatus');
+  if (st){
+    const appliedCount = wordleState.rows.filter(r => r.applied).length;
+    st.textContent = appliedCount
+      ? `Applied guesses: ${appliedCount}`
+      : 'No applied guesses (candidates are unfiltered).';
+  }
+}
+
+/* ---------- Event hooks (safe override) ---------- */
+function initWordleModeUI(){
+  const addBtn = byId('wordleAddGuessBtn');
+  const clearBtn = byId('wordleClearAllBtn');
+  const inp = byId('wordleGuessInput');
+
+  if (addBtn && inp){
+    addBtn.addEventListener('click', () => {
+      const g = (inp.value || '').trim().toUpperCase();
+      if (!isValidGuessText(g)){
+        showToast('Please enter a 5-letter word (A–Z).', 'warn');
+        return;
+      }
+      // Add row (default: not applied yet)
+      wordleState.rows.push({ guess: g, pattern: [0,0,0,0,0], applied: false });
+      inp.value = '';
+      renderWordleRows();
+      // Do not filter until user applies, to avoid accidental "all gray" constraint
+      applyWordleFiltersAndRender();
+    });
+
+    inp.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter'){
+        e.preventDefault();
+        addBtn.click();
+      }
+    });
+  }
+
+  if (clearBtn){
+    clearBtn.addEventListener('click', () => {
+      resetWordleMode();
+      applyWordleFiltersAndRender();
+    });
+  }
+}
+
+/* Mode select + Clear Filters behavior:
+   - "Clear Filters" clears Wordle guesses in Wordle Mode
+   - Otherwise, keep existing behavior
+   We capture and stop to avoid editing your existing handler.
+*/
+function initModeSelectAndTopClearOverride(){
+  const sel = byId('modeSelect');
+  if (sel){
+    sel.addEventListener('change', () => {
+      const v = sel.value;
+      setAppMode(v);
+    });
+  }
+
+  const clearTop = byId('clearAll');
+  if (clearTop){
+    clearTop.addEventListener('click', (e) => {
+      if (appMode === 'wordle'){
+        // Override existing clear behavior
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        resetWordleMode();
+        applyWordleFiltersAndRender();
+        showToast('All filters have been cleared.', 'info');
+      }
+      // else: let existing handlers run
+    }, true); // capture
+  }
+}
+
+/* Call these once after your page initializes */
+(function bootWordleMode(){
+  // Initialize Wordle UI
+  initWordleModeUI();
+  initModeSelectAndTopClearOverride();
+
+  // Default mode = Wordle Mode
+  const sel = byId('modeSelect');
+  if (sel) sel.value = 'wordle';
+
+  setAppMode('wordle', { skipReset: true });
+})();
+
+/* Re-apply Wordle filters whenever the base word list is (re)loaded
+   Robust hook: works even if inserted before loadWordsFromArray is defined.
+*/
+(function hookWordleAfterWordListLoad(){
+  function tryHook(){
+    // In non-module scripts, global function is accessible as window.loadWordsFromArray
+    const fn = window.loadWordsFromArray;
+    if (typeof fn !== 'function') return false;
+    if (window._wordleHookedLoadWordsFromArray) return true;
+
+    window._wordleHookedLoadWordsFromArray = true;
+
+    const orig = fn;
+    window.loadWordsFromArray = function(words){
+      const ret = orig.apply(this, arguments);
+
+      // If we are in Wordle Mode, keep applied guesses and re-filter on the new base list
+      if (typeof appMode !== 'undefined' && appMode === 'wordle'){
+        setTimeout(() => {
+          if (typeof applyWordleFiltersAndRender === 'function'){
+            applyWordleFiltersAndRender();
+          }
+        }, 0);
+      }
+      return ret;
+    };
+    return true;
+  }
+
+  // Try now
+  if (tryHook()) return;
+
+  // Otherwise, poll briefly until it exists
+  let tries = 0;
+  const timer = setInterval(() => {
+    tries++;
+    if (tryHook() || tries >= 60){ // ~3 seconds max (60 * 50ms)
+      clearInterval(timer);
+    }
+  }, 50);
+})();
 
 /* ===== Notifications ===== */
 function toast(msg, ms=1800){
@@ -2525,7 +3016,7 @@ function lockUI(yes){
 	const stop = byId('stopBtn');
 	if (stop) stop.disabled = !yes;  // Stop stays enabled during calculation
 	/* 2) Inputs/toggles to freeze while computing */
-	['wordListSelect','fwHardMode','fwGuessPool','hardMode','maxCand','maxPool','deepEstepThreshold','poolSelect','deepSearch','analyzeInput'].forEach(id=>{
+	['wordListSelect','modeSelect','fwHardMode','fwGuessPool','hardMode','maxCand','maxPool','deepEstepThreshold','poolSelect','deepSearch','analyzeInput'].forEach(id=>{
 		const el = byId(id);
 		if (!el) return;
 		el.disabled = yes;
@@ -2534,6 +3025,9 @@ function lockUI(yes){
 	['gInc','gExc','pInc','pExc','greenKeys','yellowKeys','grayKeys'].forEach(id=>{
 		const el = byId(id);
 		if (el) el.classList.toggle('locked', yes);
+		// 3b) Lock Wordle tiles too
+		const wr = byId('wordleRows');
+		if (wr) wr.classList.toggle('locked', yes);
 	});
 	// 4) When unlocking the UI, re-apply Hard Mode rules
 	if (!yes && typeof syncModeControls === 'function') {
