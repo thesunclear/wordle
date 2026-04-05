@@ -2068,9 +2068,9 @@ body.light .pattern-scroll::-webkit-scrollbar-thumb {
 	<!-- First-Guess Help -->
 	<strong id="firstGuessHelpToggle" class="toggle-header">🥇 First Guess Advisor Help</strong>
 	<div id="firstGuessHelpContent" class="toggle-content">
+		<p><strong>First Guess Advisor</strong> shows <strong>exact</strong> precomputed values for the <strong>first guess</strong> under the selected Answer List and Mode.</p>
 		<ul>
-			<li style="margin-top: 15px;"><strong>First Guess Advisor</strong> shows <strong>exact</strong> precomputed values for the <strong>first guess</strong> under the selected Answer List and Mode.</li>
-			<li style="margin-top: 15px;"><strong>First Guess Advisor</strong> requires the Word List at the top of the page to be set to <strong>2,302 Answer List</strong> or <strong>3,200 Answer List</strong>.</li>
+			<li><strong>First Guess Advisor</strong> requires the Word List at the top of the page to be set to <strong>2,302 Answer List</strong> or <strong>3,200 Answer List</strong>.</li>
 			<li><strong>Answer List</strong> refers to the Word List selected at the <strong>top of the page</strong> (e.g., 2,302 or 3,200).</li>
 			<li style="margin-top: 15px;"><strong>E[steps]</strong> here is <strong>exact</strong> (not simulated) and is computed under the same mode’s guessing policy:
 				<ul>
@@ -2078,19 +2078,17 @@ body.light .pattern-scroll::-webkit-scrollbar-thumb {
 					<li><strong>Non-hard Mode</strong>: follow-up guesses are allowed from the selected <strong>guess pool</strong> (Answer List or 14,855 Guessable List), consistent with the mode.</li>
 					<li>In non-hard mode, this differs from the <strong>Next Guess Recommender</strong> and <strong>Word Analyzer</strong>, which still restrict follow-up guesses to remaining candidates when computing <strong>E[steps]</strong>.</li>
 				</ul>
+				<p>Therefore, <strong>E[steps]</strong> here may differ from the <strong>Next Guess Recommender</strong> and <strong>Word Analyzer</strong> E[steps].</p>
 			</li>
-			<li style="margin-top: 15px;">Therefore, <strong>E[steps]</strong> here may differ from the <strong>Next Guess Recommender</strong> and <strong>Word Analyzer</strong> E[steps].</li>
 		</ul>
 	</div>
 	<br>
 	<!-- Next-Guess Recommender Help -->
 	<strong id="recommenderToggle" class="toggle-header">🧠 Next Guess Recommender Help</strong>
 	<div id="recommenderContent" class="toggle-content">
+		<p><strong>Next Guess Recommender</strong> uses an <strong>entropy-based</strong> approach to rank candidate guesses from the current state.</p>
 		<ul>
-			<li style="margin-top: 15px;">
-				<strong>Next Guess Recommender</strong> uses an <strong>entropy-based</strong> approach to rank candidate guesses from the current state.
-			</li>
-			<li style="margin-top: 15px;"><strong>Answer List</strong> refers to the Word List selected at the <strong>top of the page</strong>.</li>
+			<li><strong>Answer List</strong> refers to the Word List selected at the <strong>top of the page</strong>.</li>
 			<li style="margin-top: 15px;">
 				<strong>E[steps]</strong> is an <strong>approximation</strong> of the expected number of steps from the current state.
 				<ul>
