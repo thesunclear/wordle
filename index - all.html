@@ -2347,7 +2347,7 @@ function updatePreviousAnswersUI(){
   const pa = state.previousAnswers;
   
   const todayNote = pa.updatedThroughDate && pa.updatedThroughDate === pa.localToday
-  ? ' • today excluded automatically'
+  ? ' • not counted as a previous answer yet'
   : '';
 
   if (pa.loadError) {
