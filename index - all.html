@@ -2340,15 +2340,24 @@ function refreshPreviousAnswersControls(){
   valueWrap.style.display = (ready && handling !== 'ignore' && mode === 'lastN') ? '' : 'none';
 }
 
+function getEffectiveUpdatedThrough(){
+  const pa = state.previousAnswers;
+  if (!pa || !pa.data || !pa.data.length) return pa.updatedThrough;
+
+  const eligible = pa.data.filter(isPreviousAnswerRecordActive);
+  if (!eligible.length) return null;
+
+  return Math.max(...eligible.map(r => r.number));
+}
+
 function updatePreviousAnswersUI(){
   const st = byId('previousAnswersStatus');
   if (!st) return;
 
   const pa = state.previousAnswers;
   
-  const todayNote = pa.updatedThroughDate && pa.updatedThroughDate === pa.localToday
-  ? ' • not counted as a previous answer yet'
-  : '';
+  const effectiveThrough = getEffectiveUpdatedThrough();
+  const throughNumber = Number.isInteger(effectiveThrough) ? effectiveThrough : pa.updatedThrough;
 
   if (pa.loadError) {
     st.textContent = 'Previous answers unavailable.';
@@ -2372,13 +2381,13 @@ function updatePreviousAnswersUI(){
     const raw = Number.isInteger(pa.value) && pa.value > 0 ? pa.value : 365;
     const total = Array.isArray(pa.data) ? pa.data.length : 0;
     const n = Math.min(raw, total);
-    st.textContent = `Through Wordle #${pa.updatedThrough}${todayNote} • excluding last ${n}`;
+    st.textContent = `Through Wordle #${throughNumber} • excluding last ${n}`;
     refreshPreviousAnswersControls();
     return;
   }
 
   if (pa.handling === 'exclude' && pa.mode === 'all') {
-    st.textContent = `Through Wordle #${pa.updatedThrough}${todayNote} • excluding all previous`;
+    st.textContent = `Through Wordle #${throughNumber} • excluding all previous`;
     refreshPreviousAnswersControls();
     return;
   }
@@ -2387,18 +2396,18 @@ function updatePreviousAnswersUI(){
     const raw = Number.isInteger(pa.value) && pa.value > 0 ? pa.value : 365;
     const total = Array.isArray(pa.data) ? pa.data.length : 0;
     const n = Math.min(raw, total);
-    st.textContent = `Through Wordle #${pa.updatedThrough}${todayNote} • showing badge for last ${n}`;
+    st.textContent = `Through Wordle #${throughNumber} • showing badge for last ${n}`;
     refreshPreviousAnswersControls();
     return;
   }
 
   if (pa.handling === 'badge' && pa.mode === 'all') {
-    st.textContent = `Through Wordle #${pa.updatedThrough}${todayNote} • showing badge for all previous`;
+    st.textContent = `Through Wordle #${throughNumber} • showing badge for all previous`;
     refreshPreviousAnswersControls();
     return;
   }
 
-  st.textContent = `Through Wordle #${pa.updatedThrough}${todayNote}`;
+  st.textContent = `Through Wordle #${throughNumber}`;
   refreshPreviousAnswersControls();
 }
 
