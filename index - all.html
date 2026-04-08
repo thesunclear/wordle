@@ -2490,22 +2490,22 @@ function getPreviousAnswerTooltipRecords(word){
   const records = pa.byWord.get(word);
   if (!Array.isArray(records) || !records.length) return [];
 
+  const activeRecords = pa.data.filter(isPreviousAnswerRecordActive);
+
   if (pa.mode === 'all') {
-    return records.filter(isPreviousAnswerRecordActive);
+    return activeRecords.filter(rec => rec.word === word);
   }
 
   if (pa.mode === 'lastN') {
-    const eligible = records.filter(isPreviousAnswerRecordActive);
-
     const nRaw = Number(pa.value);
     const n = Math.max(1, Math.floor(Number.isFinite(nRaw) ? nRaw : 365));
-    const maxNumber = Number.isInteger(pa.updatedThrough) ? pa.updatedThrough : Infinity;
-    const minNumber = maxNumber - n + 1;
+    const sliceStart = Math.max(0, activeRecords.length - n);
+    const recent = activeRecords.slice(sliceStart);
 
-    return eligible.filter(rec => Number.isInteger(rec.number) && rec.number >= minNumber);
+    return recent.filter(rec => rec.word === word);
   }
 
-  return records.slice();
+  return activeRecords.filter(rec => rec.word === word);
 }
 
 function buildPreviousAnswerBadgeInfo(word){
