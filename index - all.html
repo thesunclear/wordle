@@ -1568,7 +1568,7 @@ body.light .pattern-scroll::-webkit-scrollbar-thumb {
 					<option value="ignore" selected>Ignore</option>
 					<option value="exclude">Exclude</option>
 					<option value="badge">Show Badge</option>
-					<option value="include">Include</option>
+					<option value="include">Only Previous</option>
 				</select>
 			</label>
 
@@ -1988,7 +1988,7 @@ body.light .pattern-scroll::-webkit-scrollbar-thumb {
 						<strong>Show Badge</strong>: keep those words in the candidate list, but mark them with a <strong>past</strong> or <strong>past+</strong> badge.
 					</li>
 					<li>
-						<strong>Include</strong>: show only past official answers in the candidate list.
+						<strong>Only Previous</strong>: show only past official answers in the candidate list.
 					</li>
 				</ul>
 			</li>
@@ -2913,7 +2913,7 @@ function renderCandidateListFromState(){
   const pa = state.previousAnswers;
   const showBadge = !!(
     pa &&
-    pa.handling === 'badge' &&
+    (pa.handling === 'badge' || pa.handling === 'include') &&
     pa.loaded &&
     pa.activeSet &&
     pa.activeSet.size > 0
@@ -3717,7 +3717,7 @@ function renderList(){
   const pa = state.previousAnswers;
   const showBadge = !!(
     pa &&
-    pa.handling === 'badge' &&
+    (pa.handling === 'badge' || pa.handling === 'include') &&
     pa.loaded &&
     pa.activeSet &&
     pa.activeSet.size > 0
