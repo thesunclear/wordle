@@ -1568,6 +1568,7 @@ body.light .pattern-scroll::-webkit-scrollbar-thumb {
 					<option value="ignore" selected>Ignore</option>
 					<option value="exclude">Exclude</option>
 					<option value="badge">Show Badge</option>
+					<option value="include">Include</option>
 				</select>
 			</label>
 
@@ -1985,6 +1986,9 @@ body.light .pattern-scroll::-webkit-scrollbar-thumb {
 					</li>
 					<li>
 						<strong>Show Badge</strong>: keep those words in the candidate list, but mark them with a <strong>past</strong> or <strong>past+</strong> badge.
+					</li>
+					<li>
+						<strong>Include</strong>: show only past official answers in the candidate list.
 					</li>
 				</ul>
 			</li>
@@ -2412,6 +2416,21 @@ function updatePreviousAnswersUI(){
     return;
   }
 
+  if (pa.handling === 'include' && pa.mode === 'lastN') {
+    const raw = Number.isInteger(pa.value) && pa.value > 0 ? pa.value : 365;
+    const total = Array.isArray(pa.data) ? pa.data.length : 0;
+    const n = Math.min(raw, total);
+    st.textContent = `Through Wordle #${throughNumber} • including last ${n}`;
+    refreshPreviousAnswersControls();
+    return;
+  }
+  
+  if (pa.handling === 'include' && pa.mode === 'all') {
+    st.textContent = `Through Wordle #${throughNumber} • including all previous`;
+    refreshPreviousAnswersControls();
+    return;
+  }
+
   st.textContent = `Through Wordle #${throughNumber}`;
   refreshPreviousAnswersControls();
 }
@@ -2451,9 +2470,17 @@ function rebuildPreviousAnswersActiveSet(){
 function applyPreviousAnswersFilter(words){
   const pa = state.previousAnswers;
   if (!Array.isArray(words) || !words.length) return [];
-  if (pa.handling !== 'exclude' || !pa.loaded || !pa.activeSet.size) return words;
+  if (!pa.loaded || !pa.activeSet.size) return words;
 
-  return words.filter(w => !pa.activeSet.has(w));
+  if (pa.handling === 'exclude') {
+    return words.filter(w => !pa.activeSet.has(w));
+  }
+
+  if (pa.handling === 'include') {
+    return words.filter(w => pa.activeSet.has(w));
+  }
+
+  return words;
 }
 
 function getPreviousAnswerTooltipRecords(word){
