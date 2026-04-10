@@ -453,6 +453,7 @@ h1 .tag{
   display:flex;
   align-items:center;
   gap:8px;
+  white-space:nowrap;
 }
 
 .previous-answers-range{
@@ -473,46 +474,8 @@ h1 .tag{
   font-size:13px;
 }
 
-.previous-answers-bar{
-  margin-top:10px;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-  flex-wrap:wrap;
-}
-
-.previous-answers-controls{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  flex-wrap:wrap;
-}
-
-.previous-answers-label{
-  font-size:13px;
-  color:var(--sub);
-  display:flex;
-  align-items:center;
-  gap:8px;
-  white-space:nowrap;
-}
-
 .previous-answers-select-label{
   gap:6px;
-}
-
-.previous-answers-value-wrap{
-  gap:6px;
-}
-
-.previous-answers-value-input{
-  width:90px;
-  padding:7px;
-  border-radius:999px;
-  border:1px solid var(--border);
-  background:var(--bg-input);
-  color:var(--fg);
-  font-size:13px;
 }
 
 .pa-badge{
@@ -597,6 +560,7 @@ h1 .tag{
   }
 }
 
+/*
 .pa-badge{
   display:inline-block;
   margin-left:6px;
@@ -605,6 +569,7 @@ h1 .tag{
   opacity:0.8;
   vertical-align:middle;
 }
+*/
 
 /* Search input (Advanced mode / Pattern Search) */
 .search{
@@ -1424,49 +1389,7 @@ body.light .pattern-scroll::-webkit-scrollbar-thumb {
     flex:1 1 calc(80% - 6px);
   }
 }
-/* ===== Previous Answers (responsive layout) ===== */
 
-.previous-answers-bar{
-  margin-top:10px;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-  flex-wrap:wrap;
-}
-
-.previous-answers-controls{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  flex-wrap:wrap;
-}
-
-.previous-answers-label{
-  font-size:13px;
-  color:var(--sub);
-  display:flex;
-  align-items:center;
-  gap:8px;
-  white-space:nowrap;
-}
-
-.previous-answers-range{
-  gap:6px;
-}
-
-.previous-answers-value-wrap{
-  gap:6px;
-}
-
-.previous-answers-value-input{
-  width:90px;
-  padding:7px;
-  border-radius:999px;
-  border:1px solid var(--border);
-  background:var(--bg-input);
-  color:var(--fg);
-  font-size:13px;
-}
 
 /* ===== Mobile layout optimization ===== */
 @media (max-width: 640px){
