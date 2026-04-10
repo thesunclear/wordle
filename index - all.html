@@ -4882,7 +4882,8 @@ function updateRecommenderModeNote() {
     ? `Top ${preset.maxCand} candidate words`
     : `Top ${preset.maxCand} candidate words + top ${preset.maxPool} external-pool words`;
 
-  noteEl.textContent = `${hard ? 'Hard Mode ON' : 'Hard Mode OFF'} • ${preset.label} • ${scopeText} • ${preset.note}`;
+  noteEl.textContent = `${hard ? 'Hard Mode ON' : 'Hard Mode OFF'} • ${preset.label} • ${preset.note}`;
+  /* noteEl.textContent = `${hard ? 'Hard Mode ON' : 'Hard Mode OFF'} • ${preset.label} • ${scopeText} • ${preset.note}`; */
 }
 
 function updateAnalyzerModeNote() {
