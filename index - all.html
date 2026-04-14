@@ -2553,7 +2553,7 @@ function getOrderedCandidateWords(words) {
     const ka = getPreviousAnswerChronologicalKey(a);
     const kb = getPreviousAnswerChronologicalKey(b);
 
-    if (ka !== kb) return ka - kb; // oldest -> newest by latest matching record
+    if (ka !== kb) return kb - ka; // newest -> oldest by latest matching record
     return a.localeCompare(b);
   });
 
