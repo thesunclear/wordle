@@ -1,6 +1,6 @@
 {
-  "updatedThrough": 1766,
-  "updatedThroughDate": "2026-04-20",
+  "updatedThrough": 1768,
+  "updatedThroughDate": "2026-04-22",
   "answers": [
     {
       "number": 0,
@@ -8856,6 +8856,16 @@
       "number": 1766,
       "word": "WEAVE",
       "date": "2026-04-20"
+    },
+    {
+      "number": 1767,
+      "word": "CLUMP",
+      "date": "2026-04-21"
+    },
+    {
+      "number": 1768,
+      "word": "SNORE",
+      "date": "2026-04-22"
     }
   ]
 }
