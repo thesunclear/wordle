@@ -5541,7 +5541,7 @@ function renderFirstGuessRows(rows, label){
   const st = byId("fwStatus");
   if (!tb || !st) return;
 
-  st.textContent = `Top 12 Words ${label} (ties included): ${rows.length} word(s)`;
+  st.textContent = `Top 15 Words ${label} (ties included): ${rows.length} word(s)`;
   tb.innerHTML = "";
 
   for (const r of rows){
