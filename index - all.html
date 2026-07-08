@@ -778,6 +778,18 @@ body.light .list::-webkit-scrollbar-thumb {
   scroll-behavior:auto;
 }
 
+.first-guess-table-wrap table{
+  border-collapse:separate;
+  border-spacing:0;
+}
+
+.first-guess-table-wrap thead th{
+  position:sticky;
+  top:0;
+  z-index:2;
+  background:var(--bg-card);
+}
+
 .first-guess-table-wrap::-webkit-scrollbar{
   width:6px;
 }
@@ -789,6 +801,10 @@ body.light .list::-webkit-scrollbar-thumb {
 
 body.light .first-guess-table-wrap::-webkit-scrollbar-thumb{
   background:rgba(0,0,0,0.2);
+}
+
+body.light .first-guess-table-wrap thead th{
+  background:var(--bg-card);
 }
 
 /* ========== Recommender controls ========== */
