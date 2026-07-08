@@ -807,6 +807,35 @@ body.light .first-guess-table-wrap thead th{
   background:var(--bg-card);
 }
 
+.fg-top100{
+  display:inline-block;
+  margin-left:8px;
+  padding:1px 6px;
+  border-radius:10px;
+
+  color:#f6c343;
+  font-size:12px;
+  font-weight:700;
+
+  border:1px solid rgba(246,195,67,.45);
+
+  text-shadow:
+    0 0 4px rgba(246,195,67,.35);
+
+  animation:fgPulse 2.8s ease-in-out infinite;
+}
+
+@keyframes fgPulse{
+  0%,100%{
+    transform:scale(1);
+    opacity:1;
+  }
+  50%{
+    transform:scale(1.06);
+    opacity:.82;
+  }
+}
+
 /* ========== Recommender controls ========== */
 .ctl{
   display:flex;
@@ -1715,7 +1744,7 @@ body.light .pattern-scroll::-webkit-scrollbar-thumb {
 <div class="card" id="firstGuessCard" style="margin-top:12px">
   <div class="bar" style="justify-content:space-between">
     <div>
-      <strong id="firstGuessToggle" class="toggle-header">First Guess Advisor</strong>
+      <strong id="firstGuessToggle" class="toggle-header">First Guess Advisor</strong> <span class="fg-top100">Top&nbsp;100</span>
       <!--<span class="hint" style="margin-left:10px">Exact (precomputed JSON)</span> -->
     </div>
   </div>
