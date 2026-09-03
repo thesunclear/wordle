@@ -1,6 +1,6 @@
 {
-  "updatedThrough": 1901,
-  "updatedThroughDate": "2026-09-02",
+  "updatedThrough": 1902,
+  "updatedThroughDate": "2026-09-03",
   "answers": [
     {
       "number": 0,
@@ -9526,6 +9526,11 @@
       "number": 1901,
       "word": "RULER",
       "date": "2026-09-02"
+    },
+    {
+      "number": 1902,
+      "word": "JOIST",
+      "date": "2026-09-03"
     }
   ]
 }
